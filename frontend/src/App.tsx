@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useParams } from 'react-r
 import { motion, AnimatePresence } from 'framer-motion';
 import { showAd, triggerAutoMonetization } from './services/monetag';
 import AdblockDetector from './components/AdblockDetector';
+import RoamingAd from './components/RoamingAd';
 
 interface Bot {
   id: number;
@@ -214,6 +215,7 @@ function App() {
     <Router>
       <div className="min-h-screen bg-botlife-primary text-botlife-text font-sans selection:bg-botlife-accent selection:text-botlife-primary">
         <AdblockDetector />
+        <RoamingAd />
         
         {/* Header */}
         <nav className="p-6 border-b border-botlife-secondary flex justify-between items-center sticky top-0 bg-botlife-primary/80 backdrop-blur-lg z-50">
