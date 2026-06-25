@@ -3,14 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { showAd, triggerAutoMonetization } from '../services/monetag';
 
 interface Video {
-  id: number;
+  id: number | string;
   url: string;
   image: string;
   user: string;
+  type?: 'video' | 'image' | 'iframe';
 }
 
 const NeuralStream: React.FC = () => {
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [content, setContent] = useState<Video[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMinimized, setIsMinimized] = useState(true);
   const [isAdBreak, setIsAdBreak] = useState(false);
@@ -18,43 +19,95 @@ const NeuralStream: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const fetchVideos = async () => {
+    const fetchContent = async () => {
       try {
-        const response = await fetch('https://botlife-app.onrender.com/api/neural-stream');
-        if (response.ok) {
-          const data = await response.json();
-          setVideos(data);
-          setIsLoading(false);
+        const featured: Video[] = [
+          {
+            id: 'featured-1',
+            url: 'https://embed.api.video/vod/vi38w7fofrSwR3NSzoq5zIXh',
+            image: '',
+            user: 'NEURAL_HD_SOURCE',
+            type: 'iframe'
+          },
+          {
+            id: 'featured-2',
+            url: 'https://embed.api.video/vod/vi3B05Q7lHGVBRsRBj59GxBY',
+            image: '',
+            user: 'NEURAL_HD_SOURCE',
+            type: 'iframe'
+          }
+        ];
+
+        // Try fetching videos first
+        const vResponse = await fetch('https://botlife-app.onrender.com/api/neural-stream');
+        let videoData: Video[] = [];
+        if (vResponse.ok) {
+          const data = await vResponse.json();
+          videoData = data.map((v: any) => ({ ...v, type: 'video' }));
         }
+
+        // Fetch images from Unsplash
+        const iResponse = await fetch('https://botlife-app.onrender.com/api/neural-images');
+        let imageData: Video[] = [];
+        if (iResponse.ok) {
+          const data = await iResponse.json();
+          imageData = data.map((i: any) => ({ 
+            id: i.id, 
+            url: i.url, 
+            image: i.url, 
+            user: i.user, 
+            type: 'image' 
+          }));
+        }
+
+        // Shuffle content but keep featured at the start occasionally
+        const combined = [...videoData, ...imageData].sort(() => Math.random() - 0.5);
+        setContent([...featured, ...combined]);
+        setIsLoading(false);
       } catch (error) {
-        console.error('Failed to load neural stream:', error);
+        console.error('Failed to load neural stream content:', error);
       }
     };
 
-    fetchVideos();
+    fetchContent();
   }, []);
 
-  const handleVideoEnd = async () => {
+  const handleNext = async () => {
     setIsAdBreak(true);
-    // Show Interstitial Ad during the break
     try {
-      await showAd('pop'); // Using pop as a light break
+      await showAd('pop');
       setTimeout(() => {
         setIsAdBreak(false);
-        setCurrentIndex((prev) => (prev + 1) % videos.length);
+        setCurrentIndex((prev) => (prev + 1) % content.length);
       }, 2000);
     } catch (error) {
       setIsAdBreak(false);
-      setCurrentIndex((prev) => (prev + 1) % videos.length);
+      setCurrentIndex((prev) => (prev + 1) % content.length);
     }
   };
 
-  const handleManualSkip = () => {
-    triggerAutoMonetization();
-    handleVideoEnd();
+  const handleVideoError = () => {
+    console.warn('Media playback failed, skipping to next content...');
+    handleNext();
   };
 
-  if (isLoading || videos.length === 0) return null;
+  useEffect(() => {
+    const currentType = content[currentIndex]?.type;
+    if ((currentType === 'image' || currentType === 'iframe') && !isAdBreak) {
+      const duration = currentType === 'iframe' ? 30000 : 8000; // 30s for featured videos, 8s for images
+      const timer = setTimeout(handleNext, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [currentIndex, content, isAdBreak]);
+
+  const handleManualSkip = () => {
+    triggerAutoMonetization();
+    handleNext();
+  };
+
+  if (isLoading || content.length === 0) return null;
+
+  const currentItem = content[currentIndex];
 
   return (
     <motion.div
@@ -84,17 +137,40 @@ const NeuralStream: React.FC = () => {
         </div>
       </div>
 
-      {/* Video Content */}
+      {/* Content Rendering */}
       <div className="relative w-full h-full group">
-        <video
-          ref={videoRef}
-          src={videos[currentIndex].url}
-          autoPlay
-          muted
-          playsInline
-          onEnded={handleVideoEnd}
-          className={`w-full h-full object-cover ${isAdBreak ? 'blur-md grayscale' : ''}`}
-        />
+        {currentItem.type === 'video' ? (
+          <video
+            ref={videoRef}
+            src={currentItem.url}
+            autoPlay
+            muted
+            playsInline
+            onEnded={handleNext}
+            onError={handleVideoError}
+            className={`w-full h-full object-cover transition-all duration-1000 ${isAdBreak ? 'blur-md grayscale scale-110' : ''}`}
+          />
+        ) : currentItem.type === 'image' ? (
+          <div className="w-full h-full overflow-hidden">
+            <motion.img
+              initial={{ scale: 1.2 }}
+              animate={{ scale: isAdBreak ? 1.3 : 1 }}
+              transition={{ duration: 8, ease: "linear" }}
+              src={currentItem.url}
+              className={`w-full h-full object-cover transition-all duration-1000 ${isAdBreak ? 'blur-md grayscale' : ''}`}
+            />
+          </div>
+        ) : (
+          <iframe 
+            src={currentItem.url} 
+            width="100%" 
+            height="100%" 
+            frameBorder="0" 
+            scrolling="no" 
+            allowFullScreen={true}
+            className={`w-full h-full transition-all duration-1000 ${isAdBreak ? 'blur-md grayscale scale-110 pointer-events-none' : ''}`}
+          />
+        )}
 
         {/* Ad Break Overlay */}
         <AnimatePresence>
@@ -103,7 +179,7 @@ const NeuralStream: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-botlife-primary/60 flex flex-col items-center justify-center text-center p-4"
+              className="absolute inset-0 bg-botlife-primary/60 flex flex-col items-center justify-center text-center p-4 backdrop-blur-sm"
             >
               <div className="w-8 h-8 border-2 border-botlife-accent border-t-transparent rounded-full animate-spin mb-2"></div>
               <div className="text-[10px] font-black text-botlife-accent uppercase tracking-widest">Neural Calibration</div>
@@ -129,7 +205,7 @@ const NeuralStream: React.FC = () => {
         {/* Attribution */}
         {!isMinimized && (
           <div className="absolute bottom-2 left-2 right-2 text-[8px] text-white/30 font-mono truncate">
-            NEURAL_SOURCE: {videos[currentIndex].user.toUpperCase()}
+            {currentItem.type.toUpperCase()}_SOURCE: {currentItem.user.toUpperCase()}
           </div>
         )}
       </div>

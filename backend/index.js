@@ -58,13 +58,17 @@ app.get('/api/neural-stream', async (req, res) => {
     
     if (response.ok) {
       const data = await response.json();
-      // Simplify data for frontend
-      const videos = data.videos.map(v => ({
-        id: v.id,
-        url: v.video_files.find(f => f.quality === 'sd' || f.quality === 'hd')?.link,
-        image: v.image,
-        user: v.user.name
-      }));
+      // Simplify data for frontend and ensure we get a valid mp4 link
+      const videos = data.videos.map(v => {
+        const file = v.video_files.find(f => f.file_type === 'video/mp4' && (f.quality === 'sd' || f.quality === 'hd')) || v.video_files[0];
+        return {
+          id: v.id,
+          url: file?.link,
+          image: v.image,
+          user: v.user.name
+        };
+      }).filter(v => v.url); // Remove any that didn't find a link
+      
       res.json(videos);
     } else {
       res.status(response.status).json({ error: 'Pexels API error' });
@@ -72,6 +76,36 @@ app.get('/api/neural-stream', async (req, res) => {
   } catch (error) {
     console.error('Pexels proxy error:', error);
     res.status(500).json({ error: 'Failed to fetch videos' });
+  }
+});
+
+// Unsplash Image Proxy
+app.get('/api/neural-images', async (req, res) => {
+  const queries = ['neural engineering', 'futuristic tech', 'cyberpunk', 'artificial intelligence'];
+  const randomQuery = queries[Math.floor(Math.random() * queries.length)];
+  
+  try {
+    const response = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(randomQuery)}&count=10`, {
+      headers: {
+        'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const images = data.map(img => ({
+        id: img.id,
+        url: img.urls.regular,
+        user: img.user.name,
+        description: img.description || img.alt_description
+      }));
+      res.json(images);
+    } else {
+      res.status(response.status).json({ error: 'Unsplash API error' });
+    }
+  } catch (error) {
+    console.error('Unsplash proxy error:', error);
+    res.status(500).json({ error: 'Failed to fetch images' });
   }
 });
 
