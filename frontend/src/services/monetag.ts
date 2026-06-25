@@ -1,25 +1,28 @@
 export const MONETAG_ZONE_ID = '8984545';
 
-export const DIRECT_LINKS = [
-  '8984644', // Terrific link
-  '9611956', // Positive link
-  '9181340', // Light link
-  '8929450', // Positive link
-  '8109845', // Efficient link
-  '9610697', // Pungent link
-  '9611854', // Strong link
-  '9022048', // Wise link
-  '9135943', // Industrious link
-  '8348809', // Beautiful link
-  '8929419', // Immortal link
-  '8984539', // Good link
-  '9126522', // Strong link
-  '8109847', // Skillful link
-  '8939304', // Hot link
-  '8109846', // Fabulous link
-  '8111059', // Rich link
-  '9003389'  // Sharp-witted link
-];
+let cachedLinks: string[] = [];
+
+export const fetchMonetizationLinks = async (): Promise<string[]> => {
+  if (cachedLinks.length > 0) return cachedLinks;
+  
+  try {
+    const response = await fetch('https://botlife-app.onrender.com/api/monetization/links');
+    if (response.ok) {
+      cachedLinks = await response.json();
+      return cachedLinks;
+    }
+  } catch (error) {
+    console.error('Failed to fetch monetization links from backend:', error);
+  }
+  
+  // Fallback to static links if backend fails
+  return [
+    '8984644', '9611956', '9181340', '8929450', '8109845', 
+    '9610697', '9611854', '9022048', '9135943', '8348809', 
+    '8929419', '8984539', '9126522', '8109847', '8939304', 
+    '8109846', '8111059', '9003389'
+  ];
+};
 
 declare global {
   interface Window {
@@ -57,12 +60,11 @@ export const showAd = async (type: 'rewarded' | 'pop' | 'inApp' = 'rewarded'): P
   }
 };
 
-export const triggerAutoMonetization = () => {
-  // Randomly open a direct link in the background/new tab occasionally
-  const randomIndex = Math.floor(Math.random() * DIRECT_LINKS.length);
-  const linkId = DIRECT_LINKS[randomIndex];
+export const triggerAutoMonetization = async () => {
+  const links = await fetchMonetizationLinks();
+  const randomIndex = Math.floor(Math.random() * links.length);
+  const linkId = links[randomIndex];
   
-  // Open the Monetag direct link in a new tab
   try {
     const url = `https://whomeerog.com/4/${linkId}`;
     window.open(url, '_blank');
