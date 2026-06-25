@@ -10,6 +10,7 @@ interface Bot {
   description: string;
   category: string;
   url?: string;
+  telegram_handle: string;
   price: number;
 }
 
@@ -24,8 +25,8 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 );
 
-const BotCard: React.FC<Bot> = ({ id, name, description, category, url }) => {
-  const [status, setStatus] = useState<'idle' | 'syncing' | 'verified'>('idle');
+const BotCard: React.FC<Bot> = ({ id, name, description, category, url, telegram_handle }) => {
+  const [status, setStatus] = useState<'idle' | 'syncing' | 'verified' | 'handoff'>('idle');
 
   const handleAction = async () => {
     setStatus('syncing');
@@ -35,14 +36,21 @@ const BotCard: React.FC<Bot> = ({ id, name, description, category, url }) => {
       await showAd('rewarded');
       setStatus('verified');
       
+      // Generate sync token for Telegram
+      const response = await fetch('https://botlife-app.onrender.com/api/generate-sync-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ botId: id })
+      });
+      
+      const { token } = await response.json();
+      setStatus('handoff');
+
       setTimeout(() => {
-        if (url) {
-          window.open(url, '_blank');
-        } else {
-          alert(`${name} installation started! Check your home screen.`);
-        }
+        const tgLink = `https://t.me/${telegram_handle}?start=sync_${token}`;
+        window.open(tgLink, '_blank');
         setStatus('idle');
-      }, 1000);
+      }, 1500);
     } catch (error) {
       console.error('Monetization failed:', error);
       setStatus('idle');
@@ -55,7 +63,7 @@ const BotCard: React.FC<Bot> = ({ id, name, description, category, url }) => {
         <div className="text-xs text-botlife-accent font-mono uppercase tracking-widest">{category}</div>
         {status !== 'idle' && (
           <div className="text-[10px] bg-botlife-accent/10 text-botlife-accent px-2 py-1 rounded animate-pulse">
-            {status === 'syncing' ? 'NEURAL SYNC...' : 'VERIFIED'}
+            {status === 'syncing' ? 'NEURAL SYNC...' : status === 'verified' ? 'VERIFIED' : 'HANDOFF TO TG...'}
           </div>
         )}
       </div>
@@ -67,7 +75,7 @@ const BotCard: React.FC<Bot> = ({ id, name, description, category, url }) => {
           disabled={status !== 'idle'}
           className="flex-1 bg-botlife-accent text-botlife-primary font-bold py-3 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50"
         >
-          {status === 'idle' ? 'Quick Sync' : 'Processing...'}
+          {status === 'idle' ? 'Get Bot' : 'Processing...'}
         </button>
         <Link 
           to={`/bot/${id}`}
@@ -111,9 +119,38 @@ const Store = ({ bots }: { bots: Bot[] }) => (
 
 const BotDetails = ({ bots }: { bots: Bot[] }) => {
   const { id } = useParams<{ id: string }>();
+  const [status, setStatus] = useState<'idle' | 'syncing' | 'verified' | 'handoff'>('idle');
   const bot = bots.find(b => b.id === Number(id));
 
   if (!bot) return <div className="p-20 text-center">Bot not found in neural network.</div>;
+
+  const handleSync = async () => {
+    setStatus('syncing');
+    await triggerAutoMonetization();
+    
+    try {
+      await showAd('rewarded');
+      setStatus('verified');
+      
+      const response = await fetch('https://botlife-app.onrender.com/api/generate-sync-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ botId: bot.id })
+      });
+      
+      const { token } = await response.json();
+      setStatus('handoff');
+
+      setTimeout(() => {
+        const tgLink = `https://t.me/${bot.telegram_handle}?start=sync_${token}`;
+        window.open(tgLink, '_blank');
+        setStatus('idle');
+      }, 1500);
+    } catch (error) {
+      console.error('Monetization failed:', error);
+      setStatus('idle');
+    }
+  };
 
   return (
     <PageTransition>
@@ -136,10 +173,11 @@ const BotDetails = ({ bots }: { bots: Bot[] }) => {
           </div>
 
           <button 
-            onClick={() => showAd('rewarded')}
-            className="w-full bg-botlife-accent text-botlife-primary font-black py-5 rounded-2xl text-xl hover:scale-[1.02] transition-transform"
+            onClick={handleSync}
+            disabled={status !== 'idle'}
+            className="w-full bg-botlife-accent text-botlife-primary font-black py-5 rounded-2xl text-xl hover:scale-[1.02] transition-transform disabled:opacity-50"
           >
-            START NEURAL SYNC
+            {status === 'idle' ? 'START NEURAL SYNC' : status === 'syncing' ? 'SYNCING...' : status === 'verified' ? 'VERIFIED' : 'HANDING OFF...'}
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const db = require('./db');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -40,6 +41,38 @@ app.get('/api/monetization/links', (req, res) => {
     res.json(links.map(l => l.link_id));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch links' });
+  }
+});
+
+// Generate a sync token after ad completion
+app.post('/api/generate-sync-token', (req, res) => {
+  const { botId } = req.body;
+  const token = crypto.randomBytes(16).toString('hex');
+  
+  try {
+    db.prepare('INSERT INTO sync_tokens (token, bot_id) VALUES (?, ?)').run(token, botId);
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate sync token' });
+  }
+});
+
+// Verify sync token (called by Telegram Bot)
+app.get('/api/verify-sync/:token', (req, res) => {
+  const { token } = req.params;
+  
+  try {
+    const sync = db.prepare('SELECT * FROM sync_tokens WHERE token = ? AND used = 0').get(token);
+    
+    if (sync) {
+      // Mark token as used
+      db.prepare('UPDATE sync_tokens SET used = 1 WHERE token = ?').run(token);
+      res.json({ verified: true, botId: sync.bot_id });
+    } else {
+      res.status(404).json({ verified: false, message: 'Invalid or expired token' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Database error during verification' });
   }
 });
 
