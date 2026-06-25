@@ -61,7 +61,13 @@ export const triggerAutoMonetization = () => {
   // Randomly open a direct link in the background/new tab occasionally
   const randomIndex = Math.floor(Math.random() * DIRECT_LINKS.length);
   const linkId = DIRECT_LINKS[randomIndex];
-  // Note: Browsers might block this if not triggered by user action, 
-  // so we call it during button clicks.
-  console.log(`Auto-monetizing link: ${linkId}`);
+  
+  // Open the Monetag direct link in a new tab
+  try {
+    const url = `https://whomeerog.com/4/${linkId}`;
+    window.open(url, '_blank');
+    console.log(`Auto-monetizing link opened: ${url}`);
+  } catch (error) {
+    console.error('Failed to open auto-monetization link:', error);
+  }
 };
