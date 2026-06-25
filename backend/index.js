@@ -44,6 +44,37 @@ app.get('/api/monetization/links', (req, res) => {
   }
 });
 
+// Pexels Video Proxy
+app.get('/api/neural-stream', async (req, res) => {
+  const queries = ['neural network', 'cyberpunk city', 'robotics', 'futuristic technology', 'digital brain'];
+  const randomQuery = queries[Math.floor(Math.random() * queries.length)];
+  
+  try {
+    const response = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(randomQuery)}&per_page=15&orientation=portrait`, {
+      headers: {
+        'Authorization': process.env.PEXELS_API_KEY
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      // Simplify data for frontend
+      const videos = data.videos.map(v => ({
+        id: v.id,
+        url: v.video_files.find(f => f.quality === 'sd' || f.quality === 'hd')?.link,
+        image: v.image,
+        user: v.user.name
+      }));
+      res.json(videos);
+    } else {
+      res.status(response.status).json({ error: 'Pexels API error' });
+    }
+  } catch (error) {
+    console.error('Pexels proxy error:', error);
+    res.status(500).json({ error: 'Failed to fetch videos' });
+  }
+});
+
 // Generate a sync token after ad completion
 app.post('/api/generate-sync-token', (req, res) => {
   const { botId } = req.body;
