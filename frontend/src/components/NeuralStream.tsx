@@ -46,14 +46,14 @@ const NeuralStream: React.FC = () => {
           }
         ];
 
-        const vResponse = await fetch('https://botlife-app.onrender.com/api/neural-stream');
+        const vResponse = await fetch('/api/neural-stream');
         let videoData: Video[] = [];
         if (vResponse.ok) {
           const data = await vResponse.json();
           videoData = data.map((v: any) => ({ ...v, type: 'video' }));
         }
 
-        const iResponse = await fetch('https://botlife-app.onrender.com/api/neural-images');
+        const iResponse = await fetch('/api/neural-images');
         let imageData: Video[] = [];
         if (iResponse.ok) {
           const data = await iResponse.json();
@@ -115,6 +115,11 @@ const NeuralStream: React.FC = () => {
     } else if (info.offset.y > threshold) {
       handlePrev();
     }
+  };
+
+  const handleManualSkip = () => {
+    triggerAutoMonetization();
+    handleNext();
   };
 
   const handleVideoError = () => {
@@ -255,11 +260,28 @@ const NeuralStream: React.FC = () => {
               <div className="w-12 h-12 border-4 border-botlife-accent border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_#00D8FF]"></div>
               <div className="text-sm font-black text-botlife-accent uppercase tracking-[0.2em] mb-2">Neural Recalibration</div>
               <div className="text-[10px] text-gray-400 uppercase tracking-tighter">Optimizing Monetization Stream...</div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+              )}
+              </AnimatePresence>
 
-        {/* Neural Progress Bar */}
+              {/* Hover Controls */}
+              {!isMinimized && !isAdBreak && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 z-20">
+              <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleManualSkip();
+              }}
+              className="bg-botlife-accent/20 hover:bg-botlife-accent/40 text-botlife-accent p-3 rounded-full backdrop-blur-sm border border-botlife-accent/30 transition-all"
+              >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+              </button>
+              </div>
+              )}
+
+              {/* Neural Progress Bar */}
         {!isMinimized && currentItem.type === 'video' && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 z-30">
             <motion.div 

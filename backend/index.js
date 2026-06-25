@@ -4,6 +4,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const db = require('./db');
 const crypto = require('crypto');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -18,6 +19,9 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the React frontend app
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // Botlife API Routes
 app.get('/health', (req, res) => {
@@ -154,9 +158,9 @@ app.post('/verify-bot', (req, res) => {
   }
 });
 
-// Render Deployment Catch-all
-app.get('/', (req, res) => {
-  res.send('Botlife Backend API is Running.');
+// For any request that doesn't match one above, send back React's index.html file
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
 app.listen(PORT, () => {

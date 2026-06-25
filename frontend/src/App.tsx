@@ -27,7 +27,7 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 );
 
-const BotCard: React.FC<Bot> = ({ id, name, description, category, url, telegram_handle }) => {
+const BotCard: React.FC<Bot> = ({ id, name, description, category, telegram_handle }) => {
   const [status, setStatus] = useState<'idle' | 'syncing' | 'verified' | 'handoff'>('idle');
 
   const handleAction = async () => {
@@ -39,7 +39,7 @@ const BotCard: React.FC<Bot> = ({ id, name, description, category, url, telegram
       setStatus('verified');
       
       // Generate sync token for Telegram
-      const response = await fetch('https://botlife-app.onrender.com/api/generate-sync-token', {
+      const response = await fetch('/api/generate-sync-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ botId: id })
@@ -134,7 +134,7 @@ const BotDetails = ({ bots }: { bots: Bot[] }) => {
       await showAd('rewarded');
       setStatus('verified');
       
-      const response = await fetch('https://botlife-app.onrender.com/api/generate-sync-token', {
+      const response = await fetch('/api/generate-sync-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ botId: bot.id })
@@ -196,7 +196,7 @@ function App() {
     
     const fetchData = async () => {
       try {
-        const response = await fetch('https://botlife-app.onrender.com/api/bots');
+        const response = await fetch('/api/bots');
         if (response.ok) {
           const data = await response.json();
           setBots(data);

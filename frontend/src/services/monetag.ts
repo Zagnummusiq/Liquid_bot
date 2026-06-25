@@ -6,7 +6,7 @@ export const fetchMonetizationLinks = async (): Promise<string[]> => {
   if (cachedLinks.length > 0) return cachedLinks;
   
   try {
-    const response = await fetch('https://botlife-app.onrender.com/api/monetization/links');
+    const response = await fetch('/api/monetization/links');
     if (response.ok) {
       cachedLinks = await response.json();
       return cachedLinks;

@@ -8,7 +8,7 @@ const AdblockDetector: React.FC = () => {
       // Common Monetag/Ad script URL that usually gets blocked
       const url = 'https://libtl.com/sdk.js';
       try {
-        const response = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+        await fetch(url, { method: 'HEAD', mode: 'no-cors' });
         setIsAdblockEnabled(false);
       } catch (error) {
         setIsAdblockEnabled(true);
