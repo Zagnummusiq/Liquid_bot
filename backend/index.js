@@ -5,9 +5,28 @@ const rateLimit = require('express-rate-limit');
 const db = require('./db');
 const crypto = require('crypto');
 const path = require('path');
+const mongoose = require('mongoose');
+const { Telegraf } = require('telegraf');
+const cron = require('node-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('Connected to MongoDB successfully'))
+  .catch((err) => console.error('MongoDB connection error:', err));
+
+// Telegram Bot Setup
+const bot = new Telegraf(process.env.BOT_TOKEN);
+bot.start((ctx) => ctx.reply('Botlife Telegram Mini App Bot Online!'));
+bot.launch();
+
+// Node-Cron Example (Runs every day at 00:00)
+cron.schedule('0 0 * * *', () => {
+  console.log('Running daily Botlife sync task...');
+  // Add sync logic here
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -45,6 +64,24 @@ app.get('/api/monetization/links', (req, res) => {
     res.json(links.map(l => l.link_id));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch links' });
+  }
+});
+
+// Network Stats
+app.get('/api/stats', (req, res) => {
+  try {
+    const totalSyncs = db.prepare('SELECT COUNT(*) as count FROM sync_history').get().count;
+    const botCount = db.prepare('SELECT COUNT(*) as count FROM bots').get().count;
+    const recentSyncs = db.prepare('SELECT bots.name, sync_history.timestamp FROM sync_history JOIN bots ON sync_history.bot_id = bots.id ORDER BY timestamp DESC LIMIT 5').all();
+    
+    res.json({
+      totalSyncs: totalSyncs + 1240, // Base offset for social proof
+      botCount,
+      activeNodes: Math.floor(Math.random() * 50) + 150,
+      recentSyncs
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
 

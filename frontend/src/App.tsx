@@ -5,6 +5,8 @@ import { showAd, triggerAutoMonetization } from './services/monetag';
 import AdblockDetector from './components/AdblockDetector';
 import RoamingAd from './components/RoamingAd';
 import NeuralStream from './components/NeuralStream';
+import TerminalBoot from './components/TerminalBoot';
+import Dashboard from './pages/Dashboard';
 
 interface Bot {
   id: number;
