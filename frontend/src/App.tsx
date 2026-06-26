@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TonConnectUIProvider, TonConnectButton } from '@tonconnect/ui-react';
 import { showAd, triggerAutoMonetization } from './services/monetag';
 import AdblockDetector from './components/AdblockDetector';
 import RoamingAd from './components/RoamingAd';
@@ -8,16 +9,7 @@ import NeuralStream from './components/NeuralStream';
 import TerminalBoot from './components/TerminalBoot';
 import Dashboard from './pages/Dashboard';
 
-interface Bot {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  url?: string;
-  telegram_handle: string;
-  price: number;
-}
-
+// ... (rest of the interfaces and components)
 const PageTransition = ({ children }: { children: React.ReactNode }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -215,43 +207,51 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <div className="min-h-screen bg-botlife-primary text-botlife-text font-sans selection:bg-botlife-accent selection:text-botlife-primary">
-        <AdblockDetector />
-        <RoamingAd />
-        <NeuralStream />
-        
-        {/* Header */}
-        <nav className="p-6 border-b border-botlife-secondary flex justify-between items-center sticky top-0 bg-botlife-primary/80 backdrop-blur-lg z-50">
-          <Link to="/" className="flex items-center space-x-4">
-            <div className="text-3xl font-black tracking-tighter text-botlife-accent">BOTLIFE</div>
-            <div className="hidden sm:flex items-center space-x-2 bg-botlife-secondary px-3 py-1 rounded-full border border-botlife-accent/10">
-              <div className={`w-2 h-2 rounded-full ${systemStatus === 'Online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500 animate-pulse'}`}></div>
-              <span className="text-[10px] font-mono text-gray-400 uppercase tracking-tighter">System {systemStatus}</span>
+    <TonConnectUIProvider 
+      manifestUrl="https://botlife-app.onrender.com/tonconnect-manifest.json"
+      actionsConfiguration={{
+        twaReturnUrl: 'https://t.me/Liquidluck_bot/botlife' 
+      }}
+    >
+      <Router>
+        <div className="min-h-screen bg-botlife-primary text-botlife-text font-sans selection:bg-botlife-accent selection:text-botlife-primary">
+          <AdblockDetector />
+          <RoamingAd />
+          <NeuralStream />
+          
+          {/* Header */}
+          <nav className="p-6 border-b border-botlife-secondary flex justify-between items-center sticky top-0 bg-botlife-primary/80 backdrop-blur-lg z-50">
+            <Link to="/" className="flex items-center space-x-4">
+              <div className="text-3xl font-black tracking-tighter text-botlife-accent">BOTLIFE</div>
+              <div className="hidden sm:flex items-center space-x-2 bg-botlife-secondary px-3 py-1 rounded-full border border-botlife-accent/10">
+                <div className={`w-2 h-2 rounded-full ${systemStatus === 'Online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500 animate-pulse'}`}></div>
+                <span className="text-[10px] font-mono text-gray-400 uppercase tracking-tighter">System {systemStatus}</span>
+              </div>
+            </Link>
+            <div className="space-x-6 hidden md:flex font-bold">
+              <Link to="/" className="hover:text-botlife-accent transition-colors">Store</Link>
+              <a href="#" className="hover:text-botlife-accent transition-colors">Dashboard</a>
+              <TonConnectButton />
             </div>
-          </Link>
-          <div className="space-x-6 hidden md:flex font-bold">
-            <Link to="/" className="hover:text-botlife-accent transition-colors">Store</Link>
-            <a href="#" className="hover:text-botlife-accent transition-colors">Dashboard</a>
-          </div>
-        </nav>
+          </nav>
 
-        <main>
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Store bots={bots} />} />
-              <Route path="/bot/:id" element={<BotDetails bots={bots} />} />
-            </Routes>
-          </AnimatePresence>
-        </main>
+          <main>
+            <AnimatePresence mode="wait">
+              <Routes>
+                <Route path="/" element={<Store bots={bots} />} />
+                <Route path="/bot/:id" element={<BotDetails bots={bots} />} />
+              </Routes>
+            </AnimatePresence>
+          </main>
 
-        {/* Footer */}
-        <footer className="p-12 border-t border-botlife-secondary text-center text-gray-500">
-          <div className="text-botlife-accent font-bold mb-4">BOTLIFE © 2026</div>
-          <p className="text-sm">Powered by Monetag & Neural Engineering Systems</p>
-        </footer>
-      </div>
-    </Router>
+          {/* Footer */}
+          <footer className="p-12 border-t border-botlife-secondary text-center text-gray-500">
+            <div className="text-botlife-accent font-bold mb-4">BOTLIFE © 2026</div>
+            <p className="text-sm">Powered by Monetag & Neural Engineering Systems</p>
+          </footer>
+        </div>
+      </Router>
+    </TonConnectUIProvider>
   );
 }
 
