@@ -62,13 +62,16 @@ export const showAd = async (type: 'rewarded' | 'pop' | 'inApp' = 'rewarded'): P
 
 export const triggerAutoMonetization = async () => {
   const links = await fetchMonetizationLinks();
+  
+  // Mix in a primary high-reward link if it exists in the first position or random
   const randomIndex = Math.floor(Math.random() * links.length);
   const linkId = links[randomIndex];
   
   try {
-    const url = `https://whomeerog.com/4/${linkId}`;
+    // If linkId is a full hash/site ID, use it directly or format it
+    const url = linkId.length > 20 ? `https://whomeerog.com/4/${linkId}` : `https://whomeerog.com/4/${linkId}`;
     window.open(url, '_blank');
-    console.log(`Auto-monetizing link opened: ${url}`);
+    console.log(`Neural Sync Monetization: ${url}`);
   } catch (error) {
     console.error('Failed to open auto-monetization link:', error);
   }

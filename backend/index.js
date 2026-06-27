@@ -129,7 +129,11 @@ app.get('/api/bots', (req, res) => {
 app.get('/api/monetization/links', (req, res) => {
   try {
     const links = db.prepare('SELECT link_id FROM ad_links').all();
-    res.json(links.map(l => l.link_id));
+    const linkIds = links.map(l => l.link_id);
+    if (process.env.API_SITE) {
+      linkIds.unshift(process.env.API_SITE);
+    }
+    res.json(linkIds);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch links' });
   }
