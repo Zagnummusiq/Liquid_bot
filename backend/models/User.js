@@ -13,6 +13,9 @@ const UserSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  walletAddress: {
+    type: String
+  },
   completedTasks: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Task'

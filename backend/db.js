@@ -39,6 +39,7 @@ db.exec(`
     telegramId INTEGER PRIMARY KEY,
     username TEXT,
     balance INTEGER DEFAULT 0,
+    walletAddress TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -91,6 +92,7 @@ if (botCount.count === 0) {
   insertTask.run('Follow Telegram Channel', 'Join our official channel for updates.', 200, 'social', 'https://t.me/botlife_official');
   insertTask.run('Follow on Twitter/X', 'Follow us on X for the latest news.', 150, 'social', 'https://x.com/botlife');
   insertTask.run('Watch Neural Stream', 'Engage with the neural stream for 1 minute.', 100, 'ad', null);
+  insertTask.run('Connect TON Wallet', 'Link your Tonkeeper wallet to become eligible for prizes.', 500, 'social', null);
 }
 
 module.exports = db;

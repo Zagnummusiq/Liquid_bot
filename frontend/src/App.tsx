@@ -8,6 +8,7 @@ import RoamingAd from './components/RoamingAd';
 import TerminalBoot from './components/TerminalBoot';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
+import Campaigns from './pages/Campaigns';
 
 // Interfaces
 interface Bot {
@@ -247,6 +248,7 @@ function App() {
               <div className="space-x-6 hidden md:flex font-bold">
                 <Link to="/" className="hover:text-botlife-accent transition-colors">Store</Link>
                 <Link to="/tasks" className="hover:text-botlife-accent transition-colors">Earn</Link>
+                <Link to="/campaigns" className="hover:text-botlife-accent transition-colors">Win</Link>
                 <Link to="/dashboard" className="hover:text-botlife-accent transition-colors">Dashboard</Link>
                 <TonConnectButton />
               </div>
@@ -259,6 +261,7 @@ function App() {
                   <Route path="/bot/:id" element={<BotDetails bots={bots} />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/tasks" element={<Tasks />} />
+                  <Route path="/campaigns" element={<Campaigns />} />
                 </Routes>
               </AnimatePresence>
             </main>

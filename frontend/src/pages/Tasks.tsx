@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useTonConnectUI } from '@tonconnect/ui-react';
 
 interface Task {
   _id: string;
@@ -16,6 +17,7 @@ const Tasks: React.FC = () => {
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [tonConnectUI] = useTonConnectUI();
 
   // Get Telegram ID from WebApp SDK or fallback to mock
   const telegramId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345678;
@@ -23,6 +25,44 @@ const Tasks: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Watch for wallet connection to mark "Connect TON Wallet" task
+  useEffect(() => {
+    const handleWalletConnection = async () => {
+      if (tonConnectUI.connected && tonConnectUI.account?.address) {
+        const walletTask = tasks.find(t => t.title === 'Connect TON Wallet' && !t.isCompleted);
+        if (walletTask) {
+          try {
+            // 1. Save wallet address
+            await fetch('/api/user/wallet', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ telegramId, walletAddress: tonConnectUI.account.address })
+            });
+
+            // 2. Complete task
+            const response = await fetch('/api/tasks/complete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ telegramId, taskId: walletTask._id })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              setBalance(data.newBalance);
+              setTasks(prev => prev.map(t => t._id === walletTask._id ? { ...t, isCompleted: true } : t));
+            }
+          } catch (error) {
+            console.error('Wallet task completion failed:', error);
+          }
+        }
+      }
+    };
+
+    if (tasks.length > 0) {
+      handleWalletConnection();
+    }
+  }, [tonConnectUI.connected, tonConnectUI.account, tasks, telegramId]);
 
   const fetchData = async () => {
     try {
